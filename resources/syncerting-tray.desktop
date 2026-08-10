@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Syncerting Tray
+GenericName=Syncthing Tray
+Comment=Monitor and control Syncthing from the system tray
+Exec=syncerting-tray
+Icon=state-sync
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=syncthing;sync;
+X-GNOME-Autostart-enabled=true
