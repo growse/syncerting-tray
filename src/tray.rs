@@ -185,7 +185,7 @@ impl SyncthingTray {
                 self.action("Restart", "view-refresh", !busy, Command::Restart),
                 MenuItem::Separator,
                 CheckmarkItem {
-                    label: "Start at Login".into(),
+                    label: "Start Syncthing at Login".into(),
                     checked: enabled_now,
                     enabled: !busy,
                     activate: Box::new(move |_: &mut Self| {
@@ -311,6 +311,21 @@ impl ksni::Tray for SyncthingTray {
         items.push(MenuItem::Separator);
         items.push(self.service_menu());
         items.push(MenuItem::Separator);
+
+        let tx_autostart = self.sender();
+        let autostart_now = self.state.autostart;
+        items.push(
+            CheckmarkItem {
+                label: "Start Tray at Login".into(),
+                checked: autostart_now,
+                enabled: !self.state.busy,
+                activate: Box::new(move |_: &mut Self| {
+                    let _ = tx_autostart.send(Command::SetAutostart(!autostart_now));
+                }),
+                ..Default::default()
+            }
+            .into(),
+        );
         items.push(self.action("Quit", "application-exit", true, Command::Quit));
 
         items

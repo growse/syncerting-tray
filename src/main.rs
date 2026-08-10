@@ -4,6 +4,7 @@
 //! the `syncthing.service` systemd user unit, and hands off anything deeper to
 //! Syncthing's own web UI.
 
+mod autostart;
 mod client;
 mod config;
 mod dialog;
@@ -148,6 +149,7 @@ impl Worker {
                 | Command::Stop
                 | Command::Restart
                 | Command::SetEnabled(_)
+                | Command::SetAutostart(_)
                 | Command::InstallUnit
         );
         if is_service_op {
@@ -183,6 +185,7 @@ impl Worker {
             Command::Stop => self.systemd.stop().await,
             Command::Restart => self.systemd.restart().await,
             Command::SetEnabled(enabled) => self.systemd.set_enabled(enabled).await,
+            Command::SetAutostart(enabled) => autostart::set_enabled(enabled),
 
             Command::InstallUnit => {
                 let path = unit::write_unit_file()?;
@@ -270,6 +273,7 @@ impl Worker {
 
     async fn refresh(&mut self) {
         self.state.unit = self.systemd.state().await.unwrap_or_default();
+        self.state.autostart = autostart::is_enabled();
 
         self.ensure_client();
         let Some(client) = self.client.clone() else {

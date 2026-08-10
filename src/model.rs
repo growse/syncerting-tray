@@ -90,6 +90,8 @@ pub struct AppState {
     pub last_error: Option<String>,
     /// True while a start/stop/restart is in flight.
     pub busy: bool,
+    /// Whether the tray itself starts with the desktop session.
+    pub autostart: bool,
 }
 
 impl Default for AppState {
@@ -103,6 +105,7 @@ impl Default for AppState {
             version: None,
             last_error: None,
             busy: false,
+            autostart: false,
         }
     }
 }
@@ -335,6 +338,9 @@ pub enum Command {
     Stop,
     Restart,
     SetEnabled(bool),
+    /// Autostart for the tray itself, distinct from [`Command::SetEnabled`],
+    /// which governs the Syncthing service.
+    SetAutostart(bool),
     InstallUnit,
     RescanAll,
     RescanFolder(String),
@@ -353,8 +359,10 @@ impl Command {
             Command::Start => "Start Syncthing".into(),
             Command::Stop => "Stop Syncthing".into(),
             Command::Restart => "Restart Syncthing".into(),
-            Command::SetEnabled(true) => "Enable Start at Login".into(),
-            Command::SetEnabled(false) => "Disable Start at Login".into(),
+            Command::SetEnabled(true) => "Enable Start Syncthing at Login".into(),
+            Command::SetEnabled(false) => "Disable Start Syncthing at Login".into(),
+            Command::SetAutostart(true) => "Enable Start Tray at Login".into(),
+            Command::SetAutostart(false) => "Disable Start Tray at Login".into(),
             Command::InstallUnit => "Install User Service".into(),
             Command::RescanAll => "Rescan All".into(),
             Command::RescanFolder(id) => format!("Rescan {id}"),

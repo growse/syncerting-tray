@@ -116,13 +116,16 @@ explicitly rather than failing silently.
 
 To start the tray on login:
 
+Use the **Start Tray at Login** item in the menu; it writes the autostart entry
+for you. The file can also be installed by hand:
+
 ```sh
 install -Dm644 resources/syncerting-tray.desktop \
   ~/.config/autostart/syncerting-tray.desktop
 ```
 
 Note this autostarts the *tray*. Syncthing itself is autostarted by its own
-systemd unit, via the "Start at Login" toggle.
+systemd unit, via the "Start Syncthing at Login" toggle.
 
 ## Configuration
 
