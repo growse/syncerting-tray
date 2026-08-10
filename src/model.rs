@@ -119,7 +119,17 @@ pub enum Health {
 }
 
 impl Health {
-    /// Breeze ships all of these at 22px, so they theme correctly on Plasma.
+    /// Every state, so the icons can be pre-rendered.
+    pub const ALL: [Health; 6] = [
+        Health::Stopped,
+        Health::Starting,
+        Health::Error,
+        Health::Syncing,
+        Health::Paused,
+        Health::Ok,
+    ];
+
+    /// Breeze fallback, used for menu entries and if pixmap rendering fails.
     pub fn icon_name(self) -> &'static str {
         match self {
             Health::Stopped => "state-offline",

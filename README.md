@@ -15,21 +15,42 @@ the icon and menu natively, with no Qt dependency and no toolkit theming mismatc
 
 ## What it does
 
-- **Status icon** driven by overall health, using Breeze's `state-*` icons:
+- **Status icon** driven by overall health:
 
   | State | Icon | Meaning |
   |---|---|---|
-  | Stopped | `state-offline` | unit not installed, or not running |
-  | Starting | `state-sync` | unit is up, REST API not answering yet |
-  | Syncing | `state-sync` | at least one folder syncing or scanning |
-  | Error | `state-error` | unit failed, or a folder has errors |
-  | Paused | `state-pause` | every folder is paused |
-  | OK | `state-ok` | everything up to date |
+  | Stopped | dimmed mark, no emblem | unit not installed, or not running |
+  | Starting | blue dot | unit is up, REST API not answering yet |
+  | Syncing | blue dot | at least one folder syncing or scanning |
+  | Error | red exclamation | unit failed, or a folder has errors |
+  | Paused | amber pause bars | every folder is paused |
+  | OK | plain mark, no emblem | everything up to date |
 
-- **Per-folder submenus** with completion percentage, plus rescan, open folder,
-  and pause/resume.
-- **Service control** — start, stop, restart, and a "Start at Login" toggle that
-  enables the unit.
+  The artwork is the Syncthing mark - the ring with three outer nodes linked to
+  a central one - traced from the project's own `logo-only.svg` into
+  `resources/icons/syncthing.svg`, then recoloured per state and badged with a
+  small emblem. State is carried by emblem *shape* as well as colour, so the
+  states stay distinguishable without relying on hue.
+
+  Two styles are available, chosen with `SYNCERTING_ICON_STYLE`:
+
+  | Value | Result |
+  |---|---|
+  | unset, or `colour` | the mark on its blue disc, sent as pixmaps |
+  | `mono`, `monochrome`, `symbolic` | the mark alone, recoloured by the panel |
+
+  The colour icons are embedded and sent as pixmaps, because no icon theme ships
+  a Syncthing status icon and a named icon would risk an empty tray slot. The
+  monochrome icons work the opposite way: they are written to
+  `~/.cache/syncerting-tray/icons` as a small `hicolor` theme and referenced *by
+  name*, because recolouring to match the panel happens inside Plasma's icon
+  engine and applies only to icons it loads from a theme. A pixmap would be stuck
+  with whatever colour was baked into it.
+
+  There is no autodetection: the StatusNotifierItem protocol never tells an item
+  how the panel is styled, so the style is a setting rather than something
+  observed.
+
 - **Left click** opens the web UI.
 - **Error dialogs** for failed actions. A tray menu closes the instant it is
   clicked, so an error recorded only in the menu would be invisible until the menu
@@ -46,7 +67,7 @@ the icon and menu natively, with no Qt dependency and no toolkit theming mismatc
 
 - KDE Plasma, or any desktop running a `org.kde.StatusNotifierWatcher`
 - A systemd user session
-- The Breeze icon theme, for the `state-*` icons
+- The Breeze icon theme, for the menu icons
 - `syncthing` on `PATH` (see below)
 
 ## Build
@@ -106,6 +127,7 @@ Environment overrides:
 | `SYNCTHING_API_KEY` | Override the API key from `config.xml` |
 | `SYNCTHING_URL` | Point at a different instance, e.g. `http://127.0.0.1:8385` |
 | `SYNCTHING_BINARY` | Absolute path used for `ExecStart` when writing the unit |
+| `SYNCERTING_ICON_STYLE` | `mono`/`monochrome`/`symbolic` for panel-recoloured icons |
 
 A wildcard GUI bind address such as `0.0.0.0:8384` is rewritten to loopback, since
 a bind address is not necessarily connectable. Syncthing's GUI certificate is

@@ -7,6 +7,7 @@
 mod client;
 mod config;
 mod dialog;
+mod icons;
 mod instance;
 mod model;
 mod tray;
@@ -44,8 +45,23 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // The monochrome icons have to exist on disk before the tray advertises a
+    // path to them; a failure here only costs the monochrome style, so it is
+    // logged rather than fatal.
+    let style = icons::Style::from_env();
+    let theme_path = match style {
+        icons::Style::Monochrome => match icons::install_monochrome_theme() {
+            Ok(path) => path.display().to_string(),
+            Err(error) => {
+                eprintln!("syncerting-tray: {error:#}");
+                String::new()
+            }
+        },
+        icons::Style::Colour => String::new(),
+    };
+
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-    let handle = SyncthingTray::new(tx.clone())
+    let handle = SyncthingTray::new(tx.clone(), style, theme_path)
         .spawn()
         .await
         .map_err(|e| anyhow::anyhow!("registering the tray item: {e}"))?;

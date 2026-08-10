@@ -3,6 +3,7 @@
 //! Menu callbacks are synchronous and run on the tray's own task, so they only
 //! post a [`Command`] to the worker rather than doing any I/O themselves.
 
+use crate::icons;
 use crate::model::{ApiState, AppState, Command};
 use ksni::menu::{CheckmarkItem, StandardItem, SubMenu};
 use ksni::{MenuItem, ToolTip};
@@ -10,13 +11,20 @@ use tokio::sync::mpsc::UnboundedSender;
 
 pub struct SyncthingTray {
     pub state: AppState,
+    /// Fixed at startup; the panel never tells us its styling, so this is a
+    /// setting rather than something observed.
+    style: icons::Style,
+    /// Root of the generated monochrome icon theme, empty in the colour style.
+    theme_path: String,
     tx: UnboundedSender<Command>,
 }
 
 impl SyncthingTray {
-    pub fn new(tx: UnboundedSender<Command>) -> Self {
+    pub fn new(tx: UnboundedSender<Command>, style: icons::Style, theme_path: String) -> Self {
         Self {
             state: AppState::default(),
+            style,
+            theme_path,
             tx,
         }
     }
@@ -204,8 +212,27 @@ impl ksni::Tray for SyncthingTray {
         "Syncthing".into()
     }
 
+    /// Empty in the colour style, so the host uses the pixmaps below. In the
+    /// monochrome style the icon is named instead, which is what lets Plasma
+    /// repaint it to match the panel. A Breeze name is the last resort, so the
+    /// tray slot is never blank.
     fn icon_name(&self) -> String {
-        self.state.health().icon_name().into()
+        let health = self.state.health();
+        match self.style {
+            icons::Style::Monochrome => icons::icon_name(health),
+            icons::Style::Colour if icons::available(health, self.style) => String::new(),
+            icons::Style::Colour => health.icon_name().into(),
+        }
+    }
+
+    /// Search path for the generated monochrome theme; ignored by the host when
+    /// empty, which is the case in the colour style.
+    fn icon_theme_path(&self) -> String {
+        self.theme_path.clone()
+    }
+
+    fn icon_pixmap(&self) -> Vec<ksni::Icon> {
+        icons::for_health(self.state.health(), self.style)
     }
 
     fn category(&self) -> ksni::Category {
@@ -227,7 +254,7 @@ impl ksni::Tray for SyncthingTray {
         }
 
         ToolTip {
-            icon_name: self.state.health().icon_name().into(),
+            icon_pixmap: icons::for_health(self.state.health(), self.style),
             title: "Syncthing".into(),
             description,
             ..Default::default()

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 117.3 117.3" width="117.3" height="117.3">
+  <!--
+    Source for the tray icons: the Syncthing mark - a ring with three outer nodes
+    linked to a central one - traced from the project's own logo-only.svg, whose
+    circular node blobs are reproduced here as plain circles because the beziers
+    are indistinguishable at tray sizes.
+
+    Placeholders are substituted per state and per style by src/icons.rs, so this
+    is a template rather than a valid standalone SVG:
+      {{STYLE}}   colour-scheme stylesheet, monochrome style only
+      {{CLASS}}   class attribute that opts the mark into recolouring
+      {{OPACITY}} whole-icon opacity, dimmed when Syncthing is not running
+      {{DISC}}    filled backing disc, or "none" in the monochrome style
+      {{MARK}}    ring, links and nodes
+      {{MASK}}    mask reference punching a gap for the badge
+      {{DEFS}}    the mask itself
+      {{BADGE}}   state emblem, empty when the state needs none
+  -->
+  {{STYLE}}
+  {{DEFS}}
+  <g opacity="{{OPACITY}}"{{CLASS}}>
+    <g{{MASK}}>
+      <circle cx="58.7" cy="58.7" r="58.7" fill="{{DISC}}"/>
+      <g fill="none" stroke="{{MARK}}" stroke-width="6" stroke-linecap="round">
+        <circle cx="58.7" cy="58.5" r="43.7"/>
+        <line x1="97.6" y1="39.4" x2="67.5" y2="64.4"/>
+        <line x1="86.5" y1="91.8" x2="67.5" y2="64.4"/>
+        <line x1="16.6" y1="69.1" x2="67.5" y2="64.4"/>
+      </g>
+      <g fill="{{MARK}}">
+        <circle cx="97.6" cy="39.4" r="9.4"/>
+        <circle cx="86.5" cy="91.8" r="9.4"/>
+        <circle cx="16.6" cy="69.1" r="9.4"/>
+        <circle cx="67.5" cy="64.4" r="9.4"/>
+      </g>
+    </g>
+    {{BADGE}}
+  </g>
+</svg>
