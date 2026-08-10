@@ -102,7 +102,7 @@ sudo apt install syncthing    # Debian/Ubuntu
 
 Most distributions package the user unit already — Arch, for example, ships
 `/usr/lib/systemd/user/syncthing.service`. Where that is the case there is nothing
-to install, and **Service → Start at Login** is all you need.
+to install, and **Service → Start Syncthing at Login** is all you need.
 
 Only if no `syncthing.service` unit exists at all does the menu offer
 **Service → Install User Service…**, which writes one to
@@ -115,10 +115,9 @@ explicitly rather than failing silently.
 
 ## Autostart
 
-To start the tray on login:
-
 Use the **Start Tray at Login** item in the menu; it writes the autostart entry
-for you. The file can also be installed by hand:
+for you, pointing at whichever binary is running. The file can also be installed
+by hand:
 
 ```sh
 install -Dm644 resources/syncerting-tray.desktop \
