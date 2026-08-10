@@ -1,7 +1,16 @@
 [package]
 name = "syncerting-tray"
 version = "0.1.0"
+description = "A Syncthing tray application for KDE Plasma"
+license = "Apache-2.0"
+repository = "https://github.com/growse/syncerting-tray"
+readme = "README.md"
+keywords = ["syncthing", "tray", "kde", "plasma", "statusnotifieritem"]
+categories = ["command-line-utilities"]
 edition = "2024"
+# The tray reads its artwork with include_str!, so the SVG has to travel with
+# the crate; target/ and the scratch preview output must not.
+include = ["src/**/*", "resources/**/*", "README.md", "LICENSE"]
 
 [dependencies]
 anyhow = "1.0.104"

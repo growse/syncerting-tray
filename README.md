@@ -75,11 +75,18 @@ the icon and menu natively, with no Qt dependency and no toolkit theming mismatc
 - The Breeze icon theme, for the menu icons
 - `syncthing` on `PATH` (see below)
 
-## Build
+## Install
+
+From crates.io:
 
 ```sh
-cargo build --release
-install -Dm755 target/release/syncerting-tray ~/.local/bin/syncerting-tray
+cargo install syncerting-tray
+```
+
+Or from a checkout:
+
+```sh
+just install    # builds --release, then installs the binary and autostart entry
 ```
 
 ## First run
@@ -145,3 +152,28 @@ A long poll against `/rest/events` wakes the tray as soon as anything changes.
 Bursts of events are coalesced into at most one refresh per second, and a full
 refresh runs every 10 seconds regardless, so the display self-heals if an event
 is ever missed.
+
+## Releasing
+
+`cargo publish` runs from CI, not from a workstation. Pushing a tag triggers
+`.github/workflows/release.yml`, which gates on clippy and the test suite before
+publishing.
+
+Authentication is by OIDC trusted publishing via `rust-lang/crates-io-auth-action`,
+so no registry token is stored in the repository; the `release` environment on
+GitHub is what authorises it. Set the crate up for trusted publishing on
+crates.io once, naming this repository and the `release` environment.
+
+```sh
+just package                 # verify the crate as crates.io would receive it
+git tag v0.1.1 && git push --tags
+```
+
+`cargo package` is worth running before tagging: it builds from the generated
+tarball rather than the working tree, which is what catches a file the crate
+needs but does not ship. The tray reads its artwork with `include_str!`, so
+`resources/` is listed in `include` for exactly that reason.
+
+## Licence
+
+Apache-2.0. See [LICENSE](LICENSE).

@@ -26,6 +26,10 @@ install: release
     install -Dm755 target/release/syncerting-tray ~/.local/bin/syncerting-tray
     install -Dm644 resources/syncerting-tray.desktop ~/.config/autostart/syncerting-tray.desktop
 
+# Verify the crate as crates.io would receive it, without publishing.
+package:
+    cargo package --locked
+
 fmt:
     cargo fmt
 
