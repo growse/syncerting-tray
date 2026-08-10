@@ -56,7 +56,8 @@ the icon and menu natively, with no Qt dependency and no toolkit theming mismatc
   how the panel is styled, so the style is a setting rather than something
   observed.
 
-- **Left click** opens the web UI.
+- **Left click** opens the menu. Everything the tray does lives there, so a
+  click that did something else would be a shortcut with no way to discover it.
 - **Error dialogs** for failed actions. A tray menu closes the instant it is
   clicked, so an error recorded only in the menu would be invisible until the menu
   is reopened. Anything you explicitly asked for therefore also reports failure in

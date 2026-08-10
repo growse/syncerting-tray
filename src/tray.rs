@@ -204,6 +204,11 @@ impl SyncthingTray {
 }
 
 impl ksni::Tray for SyncthingTray {
+    /// Left click opens the menu rather than firing an action. Everything the
+    /// tray does lives in the menu, so a click that did something else would be
+    /// a hidden shortcut with no way to discover it.
+    const MENU_ON_ACTIVATE: bool = true;
+
     fn id(&self) -> String {
         env!("CARGO_PKG_NAME").into()
     }
@@ -237,11 +242,6 @@ impl ksni::Tray for SyncthingTray {
 
     fn category(&self) -> ksni::Category {
         ksni::Category::SystemServices
-    }
-
-    /// Left click opens the web UI, which is the most common thing to want.
-    fn activate(&mut self, _x: i32, _y: i32) {
-        let _ = self.tx.send(Command::OpenWebUi);
     }
 
     fn tool_tip(&self) -> ToolTip {
