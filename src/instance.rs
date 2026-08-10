@@ -25,11 +25,19 @@ pub enum Acquired {
 /// The name is held for as long as `connection` lives, so the caller must keep
 /// it alive for the lifetime of the process.
 pub async fn acquire(connection: &zbus::Connection) -> Result<Acquired> {
+    acquire_named(connection, BUS_NAME).await
+}
+
+/// As [`acquire`], but for an arbitrary name.
+///
+/// Exists so tests can claim a throwaway name: competing for the real one would
+/// make them fail whenever an actual tray happens to be running.
+async fn acquire_named(connection: &zbus::Connection, name: &str) -> Result<Acquired> {
     // DoNotQueue makes this fail fast rather than silently waiting to inherit
     // the name when the other instance exits. ReplaceExisting is deliberately
     // not set: the instance already running should win, not the newcomer.
     let reply = connection
-        .request_name_with_flags(BUS_NAME, RequestNameFlags::DoNotQueue.into())
+        .request_name_with_flags(name, RequestNameFlags::DoNotQueue.into())
         .await;
 
     Ok(match reply {
@@ -39,7 +47,7 @@ pub async fn acquire(connection: &zbus::Connection) -> Result<Acquired> {
         // `Exists`, so losing the race arrives here, not in the match above.
         Err(zbus::Error::NameTaken) => Acquired::AlreadyRunning,
         Err(error) => {
-            return Err(error).with_context(|| format!("requesting the bus name {BUS_NAME}"));
+            return Err(error).with_context(|| format!("requesting the bus name {name}"));
         }
     })
 }
@@ -55,15 +63,22 @@ mod tests {
             return;
         };
 
-        assert_eq!(acquire(&first).await.unwrap(), Acquired::Yes);
+        // A name unique to this run, so a tray actually running on this desktop
+        // does not decide the result.
+        let name = format!("dev.growse.SyncertingTrayTest{}", std::process::id());
+
+        assert_eq!(acquire_named(&first, &name).await.unwrap(), Acquired::Yes);
 
         // Asking again on the same connection is still success, so a retry is
         // never mistaken for a second instance.
-        assert_eq!(acquire(&first).await.unwrap(), Acquired::Yes);
+        assert_eq!(acquire_named(&first, &name).await.unwrap(), Acquired::Yes);
 
         // A separate connection stands in for a second process.
         let second = zbus::Connection::session().await.unwrap();
-        assert_eq!(acquire(&second).await.unwrap(), Acquired::AlreadyRunning);
+        assert_eq!(
+            acquire_named(&second, &name).await.unwrap(),
+            Acquired::AlreadyRunning
+        );
 
         // Dropping the owner releases the name without any cleanup step, which
         // is what makes this robust against being killed.
@@ -71,7 +86,7 @@ mod tests {
         let mut regained = Acquired::AlreadyRunning;
         for _ in 0..50 {
             tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-            if acquire(&second).await.unwrap() == Acquired::Yes {
+            if acquire_named(&second, &name).await.unwrap() == Acquired::Yes {
                 regained = Acquired::Yes;
                 break;
             }
