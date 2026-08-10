@@ -36,16 +36,21 @@ the icon and menu natively, with no Qt dependency and no toolkit theming mismatc
 
   | Value | Result |
   |---|---|
-  | unset, or `colour` | the mark on its blue disc, sent as pixmaps |
-  | `mono`, `monochrome`, `symbolic` | the mark alone, recoloured by the panel |
+  | unset, or `mono` | the mark alone, recoloured by the panel (default) |
+  | `colour` | the mark on its blue disc, in full colour |
 
-  The colour icons are embedded and sent as pixmaps, because no icon theme ships
-  a Syncthing status icon and a named icon would risk an empty tray slot. The
-  monochrome icons work the opposite way: they are written to
-  `~/.cache/syncerting-tray/icons` as a small `hicolor` theme and referenced *by
-  name*, because recolouring to match the panel happens inside Plasma's icon
-  engine and applies only to icons it loads from a theme. A pixmap would be stuck
-  with whatever colour was baked into it.
+  Monochrome is the default because Plasma styles its tray icons symbolically,
+  and a colour icon looks foreign beside the rest of the panel.
+
+  The two styles reach the panel by different routes. The monochrome icons are
+  written to `~/.cache/syncerting-tray/icons` as a small `hicolor` theme and
+  referenced *by name*, because recolouring to match the panel happens inside
+  Plasma's icon engine and applies only to icons it loads from a theme — a
+  pixmap would be stuck with whatever colour was baked into it. It has to be
+  `hicolor` specifically, since that is the fallback every theme inherits. The
+  colour icons are the opposite: embedded in the binary and sent as pixmaps,
+  since no icon theme ships a Syncthing status icon and a named icon would risk
+  an empty tray slot.
 
   There is no autodetection: the StatusNotifierItem protocol never tells an item
   how the panel is styled, so the style is a setting rather than something
@@ -127,7 +132,7 @@ Environment overrides:
 | `SYNCTHING_API_KEY` | Override the API key from `config.xml` |
 | `SYNCTHING_URL` | Point at a different instance, e.g. `http://127.0.0.1:8385` |
 | `SYNCTHING_BINARY` | Absolute path used for `ExecStart` when writing the unit |
-| `SYNCERTING_ICON_STYLE` | `mono`/`monochrome`/`symbolic` for panel-recoloured icons |
+| `SYNCERTING_ICON_STYLE` | `colour` for the full-colour icons; monochrome is the default |
 
 A wildcard GUI bind address such as `0.0.0.0:8384` is rewritten to loopback, since
 a bind address is not necessarily connectable. Syncthing's GUI certificate is

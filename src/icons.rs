@@ -31,9 +31,12 @@ const SYNCTHING_BLUE: &str = "#1799d1";
 /// How the tray icon should be drawn.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Style {
+    /// A single colour, recoloured by the panel. The default, because Plasma's
+    /// tray styles status icons symbolically and a colour icon looks foreign
+    /// beside the rest of the panel.
     #[default]
-    Colour,
     Monochrome,
+    Colour,
 }
 
 impl Style {
@@ -41,8 +44,7 @@ impl Style {
     ///
     /// There is no way to detect this: the StatusNotifierItem protocol does not
     /// describe the panel's styling, and the host never tells the item whether
-    /// it is being drawn into a monochrome tray. So it is a setting, defaulting
-    /// to colour.
+    /// it is being drawn into a monochrome tray. So it is a setting.
     pub fn from_env() -> Self {
         match std::env::var("SYNCERTING_ICON_STYLE")
             .unwrap_or_default()
@@ -50,8 +52,8 @@ impl Style {
             .to_ascii_lowercase()
             .as_str()
         {
-            "mono" | "monochrome" | "symbolic" => Style::Monochrome,
-            _ => Style::Colour,
+            "colour" | "color" | "full" => Style::Colour,
+            _ => Style::Monochrome,
         }
     }
 }
@@ -376,8 +378,9 @@ mod tests {
     }
 
     #[test]
-    fn the_default_style_is_colour() {
-        assert_eq!(Style::default(), Style::Colour);
+    fn the_default_style_is_monochrome() {
+        // Plasma's tray is symbolic, so this is the one that looks native.
+        assert_eq!(Style::default(), Style::Monochrome);
     }
 
     #[test]
