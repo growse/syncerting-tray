@@ -180,3 +180,25 @@ needs but does not ship. The tray reads its artwork with `include_str!`, so
 ## Licence
 
 Apache-2.0. See [LICENSE](LICENSE).
+
+## Why the menu is flat
+
+The menu deliberately has no submenus, which is why the service controls and
+folder rows sit inline rather than grouped.
+
+Submenus in StatusNotifierItem tray menus do not open on this desktop — Plasma
+6.7.4 on Wayland. The parent row renders, complete with its arrow, and clicking
+or hovering it reveals nothing.
+
+This is not specific to this application or to [`ksni`](https://crates.io/crates/ksni).
+Two independent controls confirm it:
+
+- `ksni`'s own `async` example, which has a nested `a > a1 > a1.1` submenu, fails
+  identically.
+- `arch-update-tray`, an unrelated tray application that does not use `ksni`,
+  also fails to open its `Packages (28)` submenu.
+
+The menu data itself is correct in every case: `GetLayout`, `GetGroupProperties`,
+`GetProperty` and `AboutToShowGroup` all return the submenu's children over
+D-Bus. Plasma simply does not present them. Since no application-side change can
+help, the menu is flat, and anything deeper belongs in the web UI regardless.

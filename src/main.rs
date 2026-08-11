@@ -213,18 +213,8 @@ impl Worker {
                     .await
             }
 
-            Command::RescanFolder(id) => {
-                self.with_client(|c| async move { c.rescan_folder(&id).await })
-                    .await
-            }
-
             Command::SetAllPaused(paused) => {
                 self.with_client(|c| async move { c.set_all_paused(paused).await })
-                    .await
-            }
-
-            Command::SetFolderPaused(id, paused) => {
-                self.with_client(|c| async move { c.set_folder_paused(&id, paused).await })
                     .await
             }
 

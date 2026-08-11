@@ -245,11 +245,6 @@ impl SyncthingClient {
         self.post("/rest/db/scan").await
     }
 
-    pub async fn rescan_folder(&self, folder: &str) -> Result<()> {
-        self.post(&format!("/rest/db/scan?folder={}", urlencode(folder)))
-            .await
-    }
-
     /// Pause or resume every remote device at once.
     pub async fn set_all_paused(&self, paused: bool) -> Result<()> {
         let endpoint = if paused {
@@ -258,19 +253,6 @@ impl SyncthingClient {
             "/rest/system/resume"
         };
         self.post(endpoint).await
-    }
-
-    /// Pause or resume a single folder by patching its config entry.
-    pub async fn set_folder_paused(&self, folder: &str, paused: bool) -> Result<()> {
-        let path = format!("/rest/config/folders/{}", urlencode(folder));
-        self.request(&self.http, reqwest::Method::PATCH, &path)
-            .json(&serde_json::json!({ "paused": paused }))
-            .send()
-            .await
-            .with_context(|| format!("PATCH {path}"))?
-            .error_for_status()
-            .with_context(|| format!("PATCH {path}"))?;
-        Ok(())
     }
 }
 

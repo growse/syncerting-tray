@@ -5,7 +5,7 @@
 
 use crate::icons;
 use crate::model::{ApiState, AppState, Command};
-use ksni::menu::{CheckmarkItem, StandardItem, SubMenu};
+use ksni::menu::{CheckmarkItem, StandardItem};
 use ksni::{MenuItem, ToolTip};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -58,7 +58,12 @@ impl SyncthingTray {
         .into()
     }
 
-    /// The per-folder section, or an explanatory row when there is nothing to show.
+    /// One row per folder, showing its state. Clicking opens the folder.
+    ///
+    /// Flat rather than a submenu per folder: submenus are populated lazily by
+    /// the host and ksni does not answer `AboutToShow` for anything but the root
+    /// item, so a submenu arrives empty. Per-folder rescan and pause live in the
+    /// web UI, which this tray defers to for anything deeper anyway.
     fn folder_items(&self) -> Vec<MenuItem<Self>> {
         if self.state.api != ApiState::Connected {
             return Vec::new();
@@ -71,18 +76,11 @@ impl SyncthingTray {
             .folders
             .iter()
             .map(|folder| {
-                let tx_scan = self.sender();
                 let tx_open = self.sender();
-                let tx_pause = self.sender();
-
-                let id_scan = folder.id.clone();
-                let id_pause = folder.id.clone();
                 let path = folder.path.clone();
-                let paused = folder.paused;
-                let has_path = !folder.path.is_empty();
 
-                SubMenu {
-                    label: format!("{}  —  {}", folder.display_name(), folder.summary()),
+                StandardItem {
+                    label: format!("{}  \u{2014}  {}", folder.display_name(), folder.summary()),
                     icon_name: if folder.errors > 0 {
                         "state-error".into()
                     } else if folder.paused {
@@ -92,47 +90,10 @@ impl SyncthingTray {
                     } else {
                         "state-ok".into()
                     },
-                    submenu: vec![
-                        StandardItem {
-                            label: "Rescan".into(),
-                            icon_name: "view-refresh".into(),
-                            enabled: !paused,
-                            activate: Box::new(move |_: &mut Self| {
-                                let _ = tx_scan.send(Command::RescanFolder(id_scan.clone()));
-                            }),
-                            ..Default::default()
-                        }
-                        .into(),
-                        StandardItem {
-                            label: "Open Folder".into(),
-                            icon_name: "folder-open".into(),
-                            enabled: has_path,
-                            activate: Box::new(move |_: &mut Self| {
-                                let _ = tx_open.send(Command::OpenFolder(path.clone()));
-                            }),
-                            ..Default::default()
-                        }
-                        .into(),
-                        MenuItem::Separator,
-                        StandardItem {
-                            label: if paused {
-                                "Resume".into()
-                            } else {
-                                "Pause".into()
-                            },
-                            icon_name: if paused {
-                                "media-playback-start".into()
-                            } else {
-                                "media-playback-pause".into()
-                            },
-                            activate: Box::new(move |_: &mut Self| {
-                                let _ = tx_pause
-                                    .send(Command::SetFolderPaused(id_pause.clone(), !paused));
-                            }),
-                            ..Default::default()
-                        }
-                        .into(),
-                    ],
+                    enabled: !folder.path.is_empty(),
+                    activate: Box::new(move |_: &mut Self| {
+                        let _ = tx_open.send(Command::OpenFolder(path.clone()));
+                    }),
                     ..Default::default()
                 }
                 .into()
@@ -140,66 +101,51 @@ impl SyncthingTray {
             .collect()
     }
 
-    /// Start/stop/restart plus the enable-at-login toggle.
-    fn service_menu(&self) -> MenuItem<Self> {
+    /// Service controls, appended inline for the same reason as the folders.
+    fn service_items(&self) -> Vec<MenuItem<Self>> {
         let unit = &self.state.unit;
         let busy = self.state.busy;
 
         if !unit.installed {
-            return SubMenu {
-                label: "Service".into(),
-                icon_name: "system-run".into(),
-                submenu: vec![
-                    Self::label("syncthing.service is not installed".into()),
-                    self.action(
-                        "Install User Service…",
-                        "document-save",
-                        !busy,
-                        Command::InstallUnit,
-                    ),
-                ],
-                ..Default::default()
-            }
-            .into();
+            return vec![
+                Self::label("syncthing.service is not installed".into()),
+                self.action(
+                    "Install User Service\u{2026}",
+                    "document-save",
+                    !busy,
+                    Command::InstallUnit,
+                ),
+            ];
         }
 
         let tx_enable = self.sender();
         let enabled_now = unit.is_enabled();
 
-        SubMenu {
-            label: "Service".into(),
-            icon_name: "system-run".into(),
-            submenu: vec![
-                self.action(
-                    "Start",
-                    "media-playback-start",
-                    !busy && !unit.is_active(),
-                    Command::Start,
-                ),
-                self.action(
-                    "Stop",
-                    "media-playback-stop",
-                    !busy && unit.is_active(),
-                    Command::Stop,
-                ),
-                self.action("Restart", "view-refresh", !busy, Command::Restart),
-                MenuItem::Separator,
-                CheckmarkItem {
-                    label: "Start Syncthing at Login".into(),
-                    checked: enabled_now,
-                    enabled: !busy,
-                    activate: Box::new(move |_: &mut Self| {
-                        let _ = tx_enable.send(Command::SetEnabled(!enabled_now));
-                    }),
-                    ..Default::default()
-                }
-                .into(),
-                MenuItem::Separator,
-                Self::label(format!("Unit state: {}", unit.active_state)),
-            ],
-            ..Default::default()
-        }
-        .into()
+        vec![
+            self.action(
+                "Start Syncthing",
+                "media-playback-start",
+                !busy && !unit.is_active(),
+                Command::Start,
+            ),
+            self.action(
+                "Stop Syncthing",
+                "media-playback-stop",
+                !busy && unit.is_active(),
+                Command::Stop,
+            ),
+            self.action("Restart Syncthing", "view-refresh", !busy, Command::Restart),
+            CheckmarkItem {
+                label: "Start Syncthing at Login".into(),
+                checked: enabled_now,
+                enabled: !busy,
+                activate: Box::new(move |_: &mut Self| {
+                    let _ = tx_enable.send(Command::SetEnabled(!enabled_now));
+                }),
+                ..Default::default()
+            }
+            .into(),
+        ]
     }
 }
 
@@ -261,10 +207,13 @@ impl ksni::Tray for SyncthingTray {
         }
     }
 
-    /// Refresh on menu open so the contents are current even if an event was missed.
-    fn menu_about_to_show(&mut self) {
-        let _ = self.tx.send(Command::Refresh);
-    }
+    // `menu_about_to_show` is deliberately not implemented. Overriding it makes
+    // ksni rebuild the layout at the moment the menu opens, and a layout change
+    // while the menu is on screen reassigns item ids underneath the host, which
+    // stops submenus opening. ksni carries a FIXME about exactly this case.
+    //
+    // Nothing is lost by leaving it out: the worker refreshes on every event and
+    // at least every ten seconds, so the menu is already current when it opens.
 
     fn menu(&self) -> Vec<MenuItem<Self>> {
         let connected = self.state.api == ApiState::Connected;
@@ -309,7 +258,7 @@ impl ksni::Tray for SyncthingTray {
         ));
 
         items.push(MenuItem::Separator);
-        items.push(self.service_menu());
+        items.extend(self.service_items());
         items.push(MenuItem::Separator);
 
         let tx_autostart = self.sender();
