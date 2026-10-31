@@ -310,7 +310,13 @@ mod tests {
                 .into_iter()
                 .find(|i| i.width == 22)
                 .expect("22px icon");
-            let opaque = icon.data.chunks_exact(4).filter(|px| px[0] > 0).count();
+            let opaque = icon
+                .data
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|px| px[0] > 0)
+                .count();
             assert!(opaque > 20, "{health:?} rendered almost nothing");
         }
     }
