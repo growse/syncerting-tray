@@ -5,7 +5,7 @@
 
 use anyhow::{Context, Result, anyhow};
 use std::path::PathBuf;
-use zbus::zvariant::OwnedObjectPath;
+use zbus::OwnedObjectPath;
 
 pub const UNIT_NAME: &str = "syncthing.service";
 
@@ -83,7 +83,7 @@ impl Systemd {
         };
 
         let unit = UnitProxy::builder(&self.connection)
-            .path(path)?
+            .path(path)
             .build()
             .await?;
 

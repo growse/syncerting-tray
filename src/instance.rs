@@ -37,7 +37,7 @@ async fn acquire_named(connection: &zbus::Connection, name: &str) -> Result<Acqu
     // the name when the other instance exits. ReplaceExisting is deliberately
     // not set: the instance already running should win, not the newcomer.
     let reply = connection
-        .request_name_with_flags(name, RequestNameFlags::DoNotQueue.into())
+        .request_name_with_flags(name, RequestNameFlags::DO_NOT_QUEUE)
         .await;
 
     Ok(match reply {
